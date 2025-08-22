@@ -1,8 +1,6 @@
 use std::io::Bytes;
 
 use http::request::Builder;
-use http::Response;
-use http_body_util::combinators::BoxBody;
 use octocrab::OctocrabBuilder;
 
 use crate::{check_result::CheckResult, inputs::Inputs};
@@ -34,8 +32,6 @@ pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
         Err(_) => CheckResult::Failure("Could not find a .github/dependabot.yml file.".to_owned()),
     }
 }
-
-use serde::de::Deserialize;
 
 pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
     let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
