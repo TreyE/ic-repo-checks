@@ -47,3 +47,4 @@ runs:
       run: ./${{ runner.os }}/${{ env.binary_name }}
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        INPUT_ACCESS_TOKEN: ${{ inputs.access_token }}
