@@ -21,7 +21,7 @@ pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
                 CheckResult::Pass
             } else if x.status().as_u16() == 401 {
                 CheckResult::Failure(
-                    "Could not find a .github/dependabot.yml file: Access Denied.".to_owned(),
+                    "Could not find a .github/dependabot.yml file: Access Denied".to_owned(),
                 )
             } else if x.status().as_u16() == 403 {
                 CheckResult::Failure(
@@ -36,10 +36,10 @@ pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
 }
 
 pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
-    let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
+    let ob = OctocrabBuilder::new().personal_token(inputs.access_token);
     let oc = ob.build().unwrap();
     let builder = Builder::new()
-        .uri("/repos/".to_owned() + &inputs.repository + "/dependabot/alerts")
+        .uri("/repos/".to_owned() + &inputs.repository + "/vulnerability-alerts")
         .method(http::Method::GET);
     let req = oc.build_request(builder, None::<&()>).unwrap();
     let dependabot_check = oc.execute(req).await;

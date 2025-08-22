@@ -4,4 +4,5 @@ pub(crate) struct Inputs {
     pub(crate) repository: String,
     pub(crate) token: String,
     pub(crate) sha: String,
+    pub(crate) access_token: String,
 }

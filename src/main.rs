@@ -10,6 +10,7 @@ use security::*;
 use tokio::task::JoinSet;
 
 static GITHUB_TOKEN: &str = "GITHUB_TOKEN";
+static INPUT_ACCESS_TOKEN: &str = "INPUT_ACCESS_TOKEN";
 
 fn read_input(input_name: &str) -> Result<String, String> {
     let r_val = std::env::var(input_name);
@@ -49,6 +50,12 @@ fn gather_inputs() -> Option<inputs::Inputs> {
         failed = true;
     }
 
+    let a_token = read_input(INPUT_ACCESS_TOKEN);
+    if a_token.is_err() {
+        github_actions::error!(a_token.as_ref().expect_err("should be an error"));
+        failed = true;
+    }
+
     if failed {
         return None;
     }
@@ -58,6 +65,7 @@ fn gather_inputs() -> Option<inputs::Inputs> {
         repository: r_repo.unwrap(),
         token: r_token.unwrap(),
         sha: r_sha.unwrap(),
+        access_token: a_token.unwrap(),
     })
 }
 
