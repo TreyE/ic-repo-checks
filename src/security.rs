@@ -51,9 +51,10 @@ pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
                     "Could not check if dependabot was enabled: Access denied".to_owned(),
                 )
             } else {
-                CheckResult::Failure(
-                    "Dependabot not enabled.  Endpoint returned #{x.status().as_str()}.".to_owned(),
-                )
+                CheckResult::Failure(format!(
+                    "Dependabot not enabled.  Endpoint returned {}.",
+                    x.status().as_str()
+                ))
             }
         }
     }
