@@ -26,7 +26,7 @@ runs:
       shell: bash
       run: |
         echo "action_repo=ic-repo-checks" >> $GITHUB_ENV
-        echo "action_org=ideacrew" >> $GITHUB_ENV
+        echo "action_org=TreyE" >> $GITHUB_ENV
         echo "binary_name=ic-repo-checks" >> $GITHUB_ENV
 
     - name: Add binary extension
