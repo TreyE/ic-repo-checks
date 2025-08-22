@@ -1,0 +1,60 @@
+name: ic-repo-checks
+description: Checks for compliance with IdeaCrew repository standards and workflows.
+author: Trey Evans <lewis.r.evans@gmail.com>
+inputs:
+  repo_owner:
+    description: "The Organization Name"
+    required: true
+    default: ${{ github.repository_owner }}
+  repository:
+    description: "The Full Repository Name"
+    required: true
+    default: ${{ github.repository }}
+  repo_sha:
+    description: "The Current SHA"
+    required: true
+    default: ${{ github.sha }}
+  token:
+    description: "The GitHub token to use for downloading the action, defaults to workflow token"
+    required: true
+    default: ${{ github.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set reusable variables
+      shell: bash
+      run: |
+        echo "action_repo=ic-repo-checks" >> $GITHUB_ENV
+        echo "action_org=ideacrew" >> $GITHUB_ENV
+        echo "binary_name=ic-repo-checks" >> $GITHUB_ENV
+
+    - name: Add binary extension
+      shell: bash
+      if: runner.os == 'Windows'
+      run: echo "binary_name=${{ env.binary_name }}.exe" >> $GITHUB_ENV
+
+    - name: Get Action Version
+      id: get_action_version
+      shell: pwsh
+      run: |
+        $finalComponent = Split-Path -Leaf ${{ github.action_path }}
+        if ($finalComponent -eq "${{ env.action_repo }}") {
+          $version = ""
+        } else {
+          $version = $finalComponent
+        }
+        Write-Output "version=$version" >> $Env:GITHUB_OUTPUT
+
+    - name: Download Action
+      shell: bash
+      run: |
+        gh release download ${{ steps.get_action_version.outputs.version }} --repo ${{ env.action_org }}/${{ env.action_repo }} --pattern '${{ runner.os }}.tgz'
+        tar -xzf ${{ runner.os }}.tgz
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+
+    - name: Run Action
+      shell: bash
+      id: run
+      run: ./${{ runner.os }}/${{ env.binary_name }}
