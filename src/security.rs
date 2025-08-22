@@ -40,7 +40,9 @@ pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
     let req = oc.build_request(builder, None::<&()>).unwrap();
     let dependabot_check = oc.execute(req).await;
     match dependabot_check {
-        Err(_) => CheckResult::Failure("".to_owned()),
+        Err(_) => CheckResult::Failure(
+            "Could not check if dependabot was enabled: Request failure.".to_owned(),
+        ),
         Ok(x) => {
             if x.status().is_success() {
                 CheckResult::Pass
@@ -49,7 +51,9 @@ pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
                     "Could not check if dependabot was enabled: Access denied".to_owned(),
                 )
             } else {
-                CheckResult::Failure("Dependabot not enabled.".to_owned())
+                CheckResult::Failure(
+                    "Dependabot not enabled.  Endpoint returned #{x.status().as_str()}.".to_owned(),
+                )
             }
         }
     }
