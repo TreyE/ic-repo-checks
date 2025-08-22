@@ -1,23 +1,6 @@
 name: ic-repo-checks
 description: Checks for compliance with IdeaCrew repository standards and workflows.
 author: Trey Evans <lewis.r.evans@gmail.com>
-inputs:
-  repo_owner:
-    description: "The Organization Name"
-    required: true
-    default: ${{ github.repository_owner }}
-  repository:
-    description: "The Full Repository Name"
-    required: true
-    default: ${{ github.repository }}
-  repo_sha:
-    description: "The Current SHA"
-    required: true
-    default: ${{ github.sha }}
-  token:
-    description: "The GitHub token to use for downloading the action, defaults to workflow token"
-    required: true
-    default: ${{ github.token }}
 
 runs:
   using: "composite"

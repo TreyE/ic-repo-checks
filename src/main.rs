@@ -5,33 +5,27 @@ mod inputs;
 mod check_result;
 
 mod security;
-use github_actions::issue_command;
-use github_actions::InputResult;
+use github_actions::{issue_command, GITHUB_REPOSITORY, GITHUB_REPOSITORY_OWNER, GITHUB_SHA};
 use security::*;
 use tokio::task::JoinSet;
 
-static INPUT_REPO_OWNER: &str = "repo_owner";
-static INPUT_REPOSITORY: &str = "repository";
-static INPUT_SHA: &str = "sha";
-static INPUT_TOKEN: &str = "token";
+static GITHUB_TOKEN: &str = "GITHUB_TOKEN";
 
 fn read_input(input_name: &str) -> Result<String, String> {
-    let r_owner = github_actions::get_input(input_name);
-    match r_owner {
-        Err(x) => match x {
-            InputResult::VarError(y) => match y {
-                std::env::VarError::NotPresent => Err(format!("{} was not provided.", input_name)),
-                std::env::VarError::NotUnicode(_z) => {
-                    Err(format!("{} was not properly encoded.", input_name))
-                }
-            },
+    let r_val = std::env::var(input_name);
+    match r_val {
+        Err(y) => match y {
+            std::env::VarError::NotPresent => Err(format!("{} was not provided.", input_name)),
+            std::env::VarError::NotUnicode(_z) => {
+                Err(format!("{} was not properly encoded.", input_name))
+            }
         },
         Ok(x) => Ok(x),
     }
 }
 
 fn gather_inputs() -> Option<inputs::Inputs> {
-    let r_owner = read_input(INPUT_REPO_OWNER);
+    let r_owner = read_input(GITHUB_REPOSITORY_OWNER);
 
     let mut failed = false;
 
@@ -39,17 +33,17 @@ fn gather_inputs() -> Option<inputs::Inputs> {
         github_actions::error!(r_owner.as_ref().expect_err("should be an error"));
         failed = true;
     }
-    let r_repo = read_input(INPUT_REPOSITORY);
+    let r_repo = read_input(GITHUB_REPOSITORY);
     if r_repo.is_err() {
         github_actions::error!(r_repo.as_ref().expect_err("should be an error"));
         failed = true;
     }
-    let r_sha = read_input(INPUT_SHA);
+    let r_sha = read_input(GITHUB_SHA);
     if r_sha.is_err() {
         github_actions::error!(r_sha.as_ref().expect_err("should be an error"));
         failed = true;
     }
-    let r_token = read_input(INPUT_TOKEN);
+    let r_token = read_input(GITHUB_TOKEN);
     if r_token.is_err() {
         github_actions::error!(r_token.as_ref().expect_err("should be an error"));
         failed = true;
