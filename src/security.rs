@@ -39,7 +39,7 @@ pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
     let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
     let oc = ob.build().unwrap();
     let builder = Builder::new()
-        .uri("/repos/".to_owned() + &inputs.repository + "/vulnerability-alerts")
+        .uri("/repos/".to_owned() + &inputs.repository + "/dependabot/alerts")
         .method(http::Method::GET);
     let req = oc.build_request(builder, None::<&()>).unwrap();
     let dependabot_check = oc.execute(req).await;
