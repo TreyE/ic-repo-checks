@@ -21,7 +21,11 @@ pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
                 CheckResult::Pass
             } else if x.status().as_u16() == 401 {
                 CheckResult::Failure(
-                    "Could not find a .github/dependabot.yml file: Access Denied".to_owned(),
+                    "Could not find a .github/dependabot.yml file: Access Denied.".to_owned(),
+                )
+            } else if x.status().as_u16() == 403 {
+                CheckResult::Failure(
+                    "Could not find a .github/dependabot.yml file: Access forbidden.".to_owned(),
                 )
             } else {
                 CheckResult::Failure("Could not find a .github/dependabot.yml file.".to_owned())
@@ -48,7 +52,11 @@ pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
                 CheckResult::Pass
             } else if x.status().as_u16() == 401 {
                 CheckResult::Failure(
-                    "Could not check if dependabot was enabled: Access denied".to_owned(),
+                    "Could not check if dependabot was enabled: Access denied.".to_owned(),
+                )
+            } else if x.status().as_u16() == 403 {
+                CheckResult::Failure(
+                    "Could not check if dependabot was enabled: Access forbidden.".to_owned(),
                 )
             } else {
                 CheckResult::Failure(format!(
