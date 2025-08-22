@@ -1,5 +1,3 @@
-use std::env;
-use std::fs::write;
 use std::process::exit;
 
 mod inputs;
@@ -23,7 +21,7 @@ fn read_input(input_name: &str) -> Result<String, String> {
         Err(x) => match x {
             InputResult::VarError(y) => match y {
                 std::env::VarError::NotPresent => Err(format!("{} was not provided.", input_name)),
-                std::env::VarError::NotUnicode(z) => {
+                std::env::VarError::NotUnicode(_z) => {
                     Err(format!("{} was not properly encoded.", input_name))
                 }
             },

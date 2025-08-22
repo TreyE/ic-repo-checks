@@ -1,5 +1,3 @@
-use std::io::Bytes;
-
 use http::request::Builder;
 use octocrab::OctocrabBuilder;
 
