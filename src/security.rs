@@ -1,7 +1,7 @@
 use http::request::Builder;
 use octocrab::OctocrabBuilder;
 
-use crate::{check_result::CheckResult, inputs::Inputs};
+use crate::{inputs::Inputs, results::CheckResult};
 
 pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
     let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
@@ -18,7 +18,7 @@ pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
         Ok(x) => {
             // TODO: 401 is unauthorized
             if x.status().is_success() {
-                CheckResult::Pass
+                CheckResult::Pass("Found a `.github/dependabot.yml`".to_owned())
             } else if x.status().as_u16() == 401 {
                 CheckResult::Failure(
                     "Could not find a .github/dependabot.yml file: Access Denied".to_owned(),
@@ -49,7 +49,7 @@ pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
         ),
         Ok(x) => {
             if x.status().is_success() {
-                CheckResult::Pass
+                CheckResult::Pass("Dependabot is enabled".to_owned())
             } else if x.status().as_u16() == 401 {
                 CheckResult::Failure(
                     "Could not check if dependabot was enabled: Access denied.".to_owned(),
