@@ -1,8 +1,4 @@
-use std::{
-    fs::{File, OpenOptions},
-    io::Write,
-    process::exit,
-};
+use std::{error::Error, fs::OpenOptions, io::Write, process::exit};
 
 mod inputs;
 
@@ -11,10 +7,9 @@ mod results;
 mod security;
 use github_actions::issue_command;
 use security::*;
-use tokio::task::JoinSet;
+use tokio::{runtime::Runtime, task::JoinSet};
 
-#[tokio::main]
-async fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let inputs = inputs::gather_inputs();
 
     if inputs.is_none() {
@@ -22,16 +17,20 @@ async fn main() {
         exit(1);
     }
 
-    let mut set = JoinSet::new();
-
-    let input_result = inputs.unwrap();
-
-    set.spawn(verify_dependabot_yaml(input_result.clone()));
-    set.spawn(verify_dependabot_enabled(input_result.clone()));
-
     let mut failed = false;
 
-    let results = set.join_all().await;
+    let input_result = inputs.unwrap().clone();
+
+    let rt = Runtime::new()?;
+
+    let results = rt.block_on(async {
+        let mut set = JoinSet::new();
+
+        set.spawn(verify_dependabot_yaml(input_result.clone()));
+        set.spawn(verify_dependabot_enabled(input_result.clone()));
+
+        set.join_all().await
+    });
 
     let mut file = OpenOptions::new()
         .append(true)
@@ -61,4 +60,5 @@ async fn main() {
     file.write_all("\n**RESULT: SUCCESS**\n".as_bytes())
         .unwrap();
     file.flush().unwrap();
+    Ok(())
 }
