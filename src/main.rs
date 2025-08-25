@@ -4,8 +4,11 @@ mod inputs;
 
 mod results;
 
+mod quality;
+
 mod security;
 use github_actions::issue_command;
+use quality::*;
 use security::*;
 use tokio::{runtime::Runtime, task::JoinSet};
 
@@ -28,6 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         set.spawn(verify_dependabot_yaml(input_result.clone()));
         set.spawn(verify_dependabot_enabled(input_result.clone()));
+        set.spawn(verify_updates_yellr(input_result.clone()));
 
         set.join_all().await
     });
