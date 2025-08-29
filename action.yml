@@ -5,6 +5,10 @@ inputs:
   access_token:
     description: Access token used to access more sensitive endpoints.
     required: true
+  check_dependabot:
+    description: Perform dependabot compliance checks.
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -48,3 +52,4 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
         INPUT_ACCESS_TOKEN: ${{ inputs.access_token }}
+        INPUT_CHECK_DEPENDABOT: ${{ inputs.check_dependabot }}
