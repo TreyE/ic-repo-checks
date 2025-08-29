@@ -2,8 +2,6 @@ use std::{error::Error, fs::OpenOptions, io::Write, process::exit};
 
 mod copilot;
 
-mod id_tree;
-
 mod inputs;
 
 mod results;
