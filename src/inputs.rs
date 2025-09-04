@@ -1,7 +1,125 @@
+use std::collections::HashMap;
+
 use github_actions::{
-    issue_command, BoolInputResult, GITHUB_REPOSITORY, GITHUB_REPOSITORY_OWNER, GITHUB_SHA,
+    BoolInputResult, InputResult, GITHUB_REPOSITORY, GITHUB_REPOSITORY_OWNER, GITHUB_SHA,
     GITHUB_STEP_SUMMARY,
 };
+
+enum InputValue {
+    Str(String),
+    Boolean(bool),
+}
+
+impl InputValue {
+    unsafe fn as_str(&self) -> &str {
+        match self {
+            Self::Boolean(_) => panic!("not a boolean value!"),
+            Self::Str(s) => s.as_str(),
+        }
+    }
+
+    unsafe fn as_bool(&self) -> bool {
+        match self {
+            Self::Boolean(b) => b.clone(),
+            Self::Str(_) => panic!("not a string value!"),
+        }
+    }
+}
+
+struct InputReader {
+    inputs_read: HashMap<String, InputValue>,
+    pub failures: Vec<String>,
+}
+
+impl InputReader {
+    fn new() -> Self {
+        InputReader {
+            inputs_read: HashMap::new(),
+            failures: Vec::new(),
+        }
+    }
+
+    fn read_str_env(&mut self, key: &str) {
+        let r_val = std::env::var(key);
+        match r_val {
+            Err(y) => match y {
+                std::env::VarError::NotPresent => {
+                    self.failures.push(format!("{} was not provided.", key))
+                }
+                std::env::VarError::NotUnicode(_z) => {
+                    self.failures
+                        .push(format!("{} was not properly encoded.", key));
+                }
+            },
+            Ok(x) => {
+                self.inputs_read
+                    .insert(key.to_owned(), InputValue::Str(x.clone()));
+            }
+        };
+    }
+
+    fn read_str_input(&mut self, key: &str) {
+        let r_val = github_actions::get_input(key);
+        match r_val {
+            Ok(x) => {
+                self.inputs_read
+                    .insert("INPUT_".to_owned() + key, InputValue::Str(x));
+            }
+            Err(y) => match y {
+                InputResult::VarError(z) => match z {
+                    std::env::VarError::NotPresent => self
+                        .failures
+                        .push(format!("{} was not provided as an input.", key)),
+                    std::env::VarError::NotUnicode(_) => self
+                        .failures
+                        .push(format!("{} was not properly encoded as an input.", key)),
+                },
+            },
+        }
+    }
+
+    fn read_bool_input(&mut self, key: &str) {
+        let r_val = github_actions::get_bool_input(key);
+        match r_val {
+            Ok(x) => {
+                self.inputs_read
+                    .insert("INPUT_".to_owned() + key, InputValue::Boolean(x.clone()));
+            }
+            Err(y) => match y {
+                BoolInputResult::TypeError => self.failures.push(format!(
+                    "{} was provided as an input, but could not be converted to a boolean value.",
+                    key
+                )),
+                BoolInputResult::VarError(z) => match z {
+                    std::env::VarError::NotPresent => self
+                        .failures
+                        .push(format!("{} was not provided as an input.", key)),
+                    std::env::VarError::NotUnicode(_) => self
+                        .failures
+                        .push(format!("{} was not properly encoded as an input.", key)),
+                },
+            },
+        }
+    }
+
+    unsafe fn get_str_env(&self, key: &str) -> &str {
+        self.inputs_read.get(key).unwrap().as_str()
+    }
+
+    unsafe fn get_str_input(&self, key: &str) -> &str {
+        self.inputs_read
+            .get(&("INPUT_".to_owned() + key))
+            .unwrap()
+            .as_str()
+    }
+
+    unsafe fn get_bool_input(&self, key: &str) -> bool {
+        self.inputs_read
+            .get(&("INPUT_".to_owned() + key))
+            .unwrap()
+            .as_bool()
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct Inputs {
@@ -15,101 +133,33 @@ pub(crate) struct Inputs {
 }
 
 static GITHUB_TOKEN: &str = "GITHUB_TOKEN";
-static INPUT_ACCESS_TOKEN: &str = "INPUT_ACCESS_TOKEN";
+static INPUT_ACCESS_TOKEN: &str = "ACCESS_TOKEN";
 static INPUT_CHECK_DEPENDABOT: &str = "CHECK_DEPENDABOT";
 
-fn read_input(input_name: &str) -> Result<String, String> {
-    let r_val = std::env::var(input_name);
-    match r_val {
-        Err(y) => match y {
-            std::env::VarError::NotPresent => Err(format!("{} was not provided.", input_name)),
-            std::env::VarError::NotUnicode(_z) => {
-                Err(format!("{} was not properly encoded.", input_name))
-            }
-        },
-        Ok(x) => Ok(x),
-    }
-}
-
-fn read_boolean_input(input_name: &str) -> Result<bool, String> {
-    let r_val = github_actions::get_bool_input(input_name);
-    match r_val {
-        Ok(x) => Ok(x),
-        Err(y) => match y {
-            BoolInputResult::TypeError => Err(format!(
-                "{} was provided, but could not be converted to a boolean value.",
-                input_name
-            )),
-            BoolInputResult::VarError(z) => match z {
-                std::env::VarError::NotPresent => Err(format!("{} was not provided.", input_name)),
-                std::env::VarError::NotUnicode(_) => {
-                    Err(format!("{} was not properly encoded.", input_name))
-                }
-            },
-        },
-    }
-}
-
 pub(crate) fn gather_inputs() -> Result<Inputs, Vec<String>> {
-    let r_owner = read_input(GITHUB_REPOSITORY_OWNER);
+    let mut input_reader = InputReader::new();
 
-    let mut failed = false;
+    input_reader.read_str_env(GITHUB_REPOSITORY_OWNER);
+    input_reader.read_str_env(GITHUB_REPOSITORY);
+    input_reader.read_str_env(GITHUB_SHA);
+    input_reader.read_str_env(GITHUB_TOKEN);
+    input_reader.read_str_input(INPUT_ACCESS_TOKEN);
+    input_reader.read_str_env(GITHUB_STEP_SUMMARY);
+    input_reader.read_bool_input(INPUT_CHECK_DEPENDABOT);
 
-    let mut failures = Vec::new();
-
-    if r_owner.is_err() {
-        failures.push(r_owner.clone().expect_err("should be an error"));
-        failed = true;
-    }
-    let r_repo = read_input(GITHUB_REPOSITORY);
-    if r_repo.is_err() {
-        failures.push(r_repo.clone().expect_err("should be an error"));
-        failed = true;
-    }
-    let r_sha = read_input(GITHUB_SHA);
-    if r_sha.is_err() {
-        failures.push(r_sha.clone().expect_err("should be an error"));
-        failed = true;
-    }
-    let r_token = read_input(GITHUB_TOKEN);
-    if r_token.is_err() {
-        failures.push(r_token.clone().expect_err("should be an error"));
-        failed = true;
+    if input_reader.failures.len() > 0 {
+        return Err(input_reader.failures.clone());
     }
 
-    let a_token = read_input(INPUT_ACCESS_TOKEN);
-    if a_token.is_err() {
-        failures.push(a_token.clone().expect_err("should be an error"));
-        failed = true;
+    unsafe {
+        Ok(Inputs {
+            repository_owner: input_reader.get_str_env(GITHUB_REPOSITORY_OWNER).to_owned(),
+            repository: input_reader.get_str_env(GITHUB_REPOSITORY).to_owned(),
+            token: input_reader.get_str_env(GITHUB_TOKEN).to_owned(),
+            sha: input_reader.get_str_env(GITHUB_SHA).to_owned(),
+            access_token: input_reader.get_str_input(INPUT_ACCESS_TOKEN).to_owned(),
+            step_summary_path: input_reader.get_str_env(GITHUB_STEP_SUMMARY).to_owned(),
+            check_dependabot: input_reader.get_bool_input(INPUT_CHECK_DEPENDABOT),
+        })
     }
-
-    let ss_path = read_input(GITHUB_STEP_SUMMARY);
-    if ss_path.is_err() {
-        failures.push(ss_path.clone().expect_err("should be an error"));
-        failed = true;
-    }
-
-    let check_dependabot_val_result = read_boolean_input(INPUT_CHECK_DEPENDABOT);
-    if check_dependabot_val_result.is_err() {
-        failures.push(
-            check_dependabot_val_result
-                .clone()
-                .expect_err("should be an error"),
-        );
-        failed = true;
-    }
-
-    if failed {
-        return Err(failures);
-    }
-
-    Ok(Inputs {
-        repository_owner: r_owner.unwrap(),
-        repository: r_repo.unwrap(),
-        token: r_token.unwrap(),
-        sha: r_sha.unwrap(),
-        access_token: a_token.unwrap(),
-        step_summary_path: ss_path.unwrap(),
-        check_dependabot: check_dependabot_val_result.unwrap(),
-    })
 }

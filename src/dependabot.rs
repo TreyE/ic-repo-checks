@@ -3,7 +3,14 @@ use octocrab::OctocrabBuilder;
 
 use crate::{inputs::Inputs, results::CheckResult};
 
-pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
+pub(crate) async fn verify_dependabot(inputs: Inputs) -> Vec<CheckResult> {
+    vec![
+        verify_dependabot_enabled(inputs.clone()).await,
+        verify_dependabot_yaml(inputs.clone()).await,
+    ]
+}
+
+async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
     let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
     let repo_name = inputs
         .repository
@@ -35,7 +42,7 @@ pub(crate) async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
     }
 }
 
-pub(crate) async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
+async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
     let ob = OctocrabBuilder::new().personal_token(inputs.access_token);
     let oc = ob.build().unwrap();
     let builder = Builder::new()

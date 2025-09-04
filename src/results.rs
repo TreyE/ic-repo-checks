@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub(crate) enum CheckResult {
     Pass(String),
     Failure(String),

@@ -15,7 +15,7 @@ use quality::*;
 
 use tokio::{runtime::Builder, task::JoinSet};
 
-use crate::copilot::verify_copilot_yaml;
+use crate::{copilot::verify_copilot_yaml, results::CheckResult};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let inputs = inputs::gather_inputs();
@@ -35,13 +35,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut set = JoinSet::new();
 
         if input_result.check_dependabot {
-            set.spawn(verify_dependabot_yaml(input_result.clone()));
-            set.spawn(verify_dependabot_enabled(input_result.clone()));
+            set.spawn(verify_dependabot(input_result.clone()));
         }
         set.spawn(verify_updates_yellr(input_result.clone()));
         set.spawn(verify_copilot_yaml(input_result.clone()));
 
-        set.join_all().await
+        set.join_all()
+            .await
+            .iter()
+            .flat_map(|i| i)
+            .map(|i| (*i).to_owned())
+            .collect::<Vec<CheckResult>>()
     });
 
     let mut file = OpenOptions::new()

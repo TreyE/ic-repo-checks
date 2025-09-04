@@ -46,7 +46,7 @@ fn hook_check(h: &Hook) -> bool {
     correct_content_type && correct_url && h.active && does_correct_events
 }
 
-pub(crate) async fn verify_updates_yellr(inputs: Inputs) -> CheckResult {
+pub(crate) async fn verify_updates_yellr(inputs: Inputs) -> Vec<CheckResult> {
     let ob = OctocrabBuilder::new().personal_token(inputs.access_token);
     let oc = ob.build().unwrap();
     let dependabot_check: octocrab::Result<octocrab::Page<Hook>> = oc
@@ -57,18 +57,22 @@ pub(crate) async fn verify_updates_yellr(inputs: Inputs) -> CheckResult {
         .await;
 
     match dependabot_check {
-        Err(_) => CheckResult::Failure(
+        Err(_) => vec![CheckResult::Failure(
             "Could not check if repository reports to Yellr: Request failure.".to_owned(),
-        ),
+        )],
         Ok(x) => match oc.all_pages(x).await {
-            Err(_) => CheckResult::Failure(
+            Err(_) => vec![CheckResult::Failure(
                 "Could not check if repository reports to Yellr: Request failure.".to_owned(),
-            ),
+            )],
             Ok(y) => {
                 if y.iter().any(hook_check) {
-                    CheckResult::Pass("Repository Reports to Yellr correctly".to_owned())
+                    vec![CheckResult::Pass(
+                        "Repository Reports to Yellr correctly".to_owned(),
+                    )]
                 } else {
-                    CheckResult::Failure("Repository does not report to Yellr.".to_owned())
+                    vec![CheckResult::Failure(
+                        "Repository does not report to Yellr.".to_owned(),
+                    )]
                 }
             }
         },

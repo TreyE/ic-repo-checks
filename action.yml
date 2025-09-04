@@ -1,9 +1,12 @@
 name: ic-repo-checks
 description: Checks for compliance with IdeaCrew repository standards and workflows.
 author: Trey Evans <lewis.r.evans@gmail.com>
+branding:
+  icon: shield
+  color: black
 inputs:
   access_token:
-    description: Access token used to access more sensitive endpoints.
+    description: Access token used for more sensitive endpoints.
     required: true
   check_dependabot:
     description: Perform dependabot compliance checks.
