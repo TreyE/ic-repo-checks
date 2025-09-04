@@ -10,11 +10,6 @@ Currently checks for:
 
 ## Action Configuration
 
-<!-- BEGIN_ACTION_DOCS -->
-
-# ic-repo-checks
-Checks for compliance with IdeaCrew repository standards and workflows.
-
 # inputs
 | Title | Required | Type | Default| Description |
 |-----|-----|-----|-----|-----|
