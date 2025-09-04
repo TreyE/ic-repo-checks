@@ -12,6 +12,10 @@ inputs:
     description: Perform dependabot compliance checks.
     required: false
     default: "true"
+  check_yellr:
+    description: Check if the repository reports to Yellr.
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -56,3 +60,4 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         INPUT_ACCESS_TOKEN: ${{ inputs.access_token }}
         INPUT_CHECK_DEPENDABOT: ${{ inputs.check_dependabot }}
+        INPUT_CHECK_YELLR: ${{ inputs.check_yellr }}

@@ -37,7 +37,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         if input_result.check_dependabot {
             set.spawn(verify_dependabot(input_result.clone()));
         }
-        set.spawn(verify_updates_yellr(input_result.clone()));
+        if input_result.check_yellr {
+            set.spawn(verify_updates_yellr(input_result.clone()));
+        }
         set.spawn(verify_copilot_yaml(input_result.clone()));
 
         set.join_all()

@@ -130,11 +130,13 @@ pub(crate) struct Inputs {
     pub(crate) access_token: String,
     pub(crate) step_summary_path: String,
     pub(crate) check_dependabot: bool,
+    pub(crate) check_yellr: bool,
 }
 
 static GITHUB_TOKEN: &str = "GITHUB_TOKEN";
 static INPUT_ACCESS_TOKEN: &str = "ACCESS_TOKEN";
 static INPUT_CHECK_DEPENDABOT: &str = "CHECK_DEPENDABOT";
+static INPUT_CHECK_YELLR: &str = "CHECK_YELLR";
 
 pub(crate) fn gather_inputs() -> Result<Inputs, Vec<String>> {
     let mut input_reader = InputReader::new();
@@ -146,6 +148,7 @@ pub(crate) fn gather_inputs() -> Result<Inputs, Vec<String>> {
     input_reader.read_str_input(INPUT_ACCESS_TOKEN);
     input_reader.read_str_env(GITHUB_STEP_SUMMARY);
     input_reader.read_bool_input(INPUT_CHECK_DEPENDABOT);
+    input_reader.read_bool_input(INPUT_CHECK_YELLR);
 
     if input_reader.failures.len() > 0 {
         return Err(input_reader.failures.clone());
@@ -160,6 +163,7 @@ pub(crate) fn gather_inputs() -> Result<Inputs, Vec<String>> {
             access_token: input_reader.get_str_input(INPUT_ACCESS_TOKEN).to_owned(),
             step_summary_path: input_reader.get_str_env(GITHUB_STEP_SUMMARY).to_owned(),
             check_dependabot: input_reader.get_bool_input(INPUT_CHECK_DEPENDABOT),
+            check_yellr: input_reader.get_bool_input(INPUT_CHECK_YELLR),
         })
     }
 }
