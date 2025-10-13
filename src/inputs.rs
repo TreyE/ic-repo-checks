@@ -138,7 +138,7 @@ static GITHUB_TOKEN: &str = "GITHUB_TOKEN";
 static INPUT_ACCESS_TOKEN: &str = "ACCESS_TOKEN";
 static INPUT_CHECK_DEPENDABOT: &str = "CHECK_DEPENDABOT";
 static INPUT_CHECK_YELLR: &str = "CHECK_YELLR";
-static INPUT_CHECK_BUNDLER_AUDIT: &str = "INPUT_CHECK_BUNDLER_AUDIT";
+static INPUT_CHECK_BUNDLER_AUDIT: &str = "CHECK_BUNDLER_AUDIT";
 
 pub(crate) fn gather_inputs() -> Result<Inputs, Vec<String>> {
     let mut input_reader = InputReader::new();

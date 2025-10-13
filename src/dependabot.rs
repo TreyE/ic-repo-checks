@@ -1,9 +1,7 @@
 use http::request::Builder;
 
 use crate::{
-    github_utils::{
-        file_check, octocrab_repo_handler_for, octocrab_with_token_for, FileCheckResult,
-    },
+    github_utils::{file_check, octocrab_with_token_for, FileCheckResult},
     inputs::Inputs,
     results::CheckResult,
 };
