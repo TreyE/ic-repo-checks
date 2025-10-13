@@ -448,8 +448,10 @@ dependencies = [
 name = "ic-repo-checks"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "github-actions",
  "http",
+ "http-body-util",
  "octocrab",
  "tokio",
 ]

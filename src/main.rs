@@ -1,5 +1,7 @@
 use std::{error::Error, fs::OpenOptions, io::Write, process::exit};
 
+mod github_utils;
+
 mod copilot;
 
 mod inputs;
@@ -8,6 +10,8 @@ mod results;
 
 mod quality;
 
+mod rails_projects;
+
 mod dependabot;
 use dependabot::*;
 use github_actions::issue_command;
@@ -15,7 +19,9 @@ use quality::*;
 
 use tokio::{runtime::Builder, task::JoinSet};
 
-use crate::{copilot::verify_copilot_yaml, results::CheckResult};
+use crate::{
+    copilot::verify_copilot_yaml, rails_projects::verify_rails_projects, results::CheckResult,
+};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let inputs = inputs::gather_inputs();
@@ -41,6 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             set.spawn(verify_updates_yellr(input_result.clone()));
         }
         set.spawn(verify_copilot_yaml(input_result.clone()));
+        set.spawn(verify_rails_projects(input_result.clone()));
 
         set.join_all()
             .await
@@ -54,9 +61,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .append(true)
         .create(true)
         .open(input_result.step_summary_path)
-        .unwrap();
-
-    file.write_all("## Repository Compliance Report\n\n".as_bytes())
         .unwrap();
 
     for result in results {

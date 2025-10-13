@@ -1,7 +1,12 @@
 use http::request::Builder;
-use octocrab::OctocrabBuilder;
 
-use crate::{inputs::Inputs, results::CheckResult};
+use crate::{
+    github_utils::{
+        file_check, octocrab_repo_handler_for, octocrab_with_token_for, FileCheckResult,
+    },
+    inputs::Inputs,
+    results::CheckResult,
+};
 
 pub(crate) async fn verify_dependabot(inputs: Inputs) -> Vec<CheckResult> {
     vec![
@@ -11,40 +16,26 @@ pub(crate) async fn verify_dependabot(inputs: Inputs) -> Vec<CheckResult> {
 }
 
 async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
-    let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
-    let repo_name = inputs
-        .repository
-        .strip_prefix((inputs.repository_owner.clone() + "/").as_str())
-        .unwrap();
-    let oc = ob.build().unwrap();
-    let rh = oc.repos(inputs.repository_owner.clone(), repo_name);
-    let dependabot_file = rh
-        .raw_file(inputs.sha.clone(), ".github/dependabot.yml")
-        .await;
-    match dependabot_file {
-        Ok(x) => {
-            // TODO: 401 is unauthorized
-            if x.status().is_success() {
-                CheckResult::Pass("Found a `.github/dependabot.yml`".to_owned())
-            } else if x.status().as_u16() == 401 {
-                CheckResult::Failure(
-                    "Could not find a .github/dependabot.yml file: Access Denied".to_owned(),
-                )
-            } else if x.status().as_u16() == 403 {
-                CheckResult::Failure(
-                    "Could not find a .github/dependabot.yml file: Access forbidden.".to_owned(),
-                )
-            } else {
-                CheckResult::Failure("Could not find a .github/dependabot.yml file.".to_owned())
-            }
+    let oc = octocrab_with_token_for(&inputs);
+    match file_check(&oc, &inputs, ".github/dependabot.yml").await {
+        FileCheckResult::Found => CheckResult::Pass("Found a `.github/dependabot.yml`".to_owned()),
+        FileCheckResult::AccessDenied => CheckResult::Failure(
+            "Could not find a .github/dependabot.yml file: Access Denied".to_owned(),
+        ),
+        FileCheckResult::AccessForbidden => CheckResult::Failure(
+            "Could not find a .github/dependabot.yml file: Access forbidden.".to_owned(),
+        ),
+        FileCheckResult::Error(_) => {
+            CheckResult::Failure("Could not find a .github/dependabot.yml file.".to_owned())
         }
-        Err(_) => CheckResult::Failure("Could not find a .github/dependabot.yml file.".to_owned()),
+        FileCheckResult::NotFound => {
+            CheckResult::Failure("Could not find a .github/dependabot.yml file.".to_owned())
+        }
     }
 }
 
 async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
-    let ob = OctocrabBuilder::new().personal_token(inputs.access_token);
-    let oc = ob.build().unwrap();
+    let oc = octocrab_with_token_for(&inputs);
     let builder = Builder::new()
         .uri("/repos/".to_owned() + &inputs.repository + "/vulnerability-alerts")
         .method(http::Method::GET);

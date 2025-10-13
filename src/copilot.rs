@@ -1,42 +1,34 @@
-use octocrab::OctocrabBuilder;
-
-use crate::{inputs::Inputs, results::CheckResult};
+use crate::{
+    github_utils::{
+        file_check, octocrab_repo_handler_for, octocrab_with_token_for, FileCheckResult,
+    },
+    inputs::Inputs,
+    results::CheckResult,
+};
 
 pub(crate) async fn verify_copilot_yaml(inputs: Inputs) -> Vec<CheckResult> {
-    let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
-    let repo_name = inputs
-        .repository
-        .strip_prefix((inputs.repository_owner.clone() + "/").as_str())
-        .unwrap();
-    let oc = ob.build().unwrap();
-    let rh = oc.repos(inputs.repository_owner.clone(), repo_name);
+    let oc = octocrab_with_token_for(&inputs);
+    let rh = octocrab_repo_handler_for(&oc, &inputs);
     let repo = rh.get().await.unwrap();
     if !repo.private.unwrap_or(false) {
         return vec![CheckResult::Ignore];
     }
-    let copilot_ignore_file = rh.raw_file(inputs.sha.clone(), ".copilotignore").await;
-    match copilot_ignore_file {
-        Ok(x) => {
-            if x.status().is_success() {
-                vec![CheckResult::Pass(
-                    "Found a `.copilotignore` file for a private repository.".to_owned(),
-                )]
-            } else if x.status().as_u16() == 401 {
-                vec![CheckResult::Failure(
-                    "Could not find a .copilotignore file for a private repository: Access Denied"
-                        .to_owned(),
-                )]
-            } else if x.status().as_u16() == 403 {
-                vec![CheckResult::Failure(
-                    "Could not find a .copilotignore file for a private repository: Access forbidden.".to_owned(),
-                )]
-            } else {
-                vec![CheckResult::Failure(
-                    "Could not find a .copilotignore file for a private repository.".to_owned(),
-                )]
-            }
-        }
-        Err(_) => vec![CheckResult::Failure(
+    match file_check(&oc, &inputs, ".copilotignore").await {
+        FileCheckResult::Found => vec![CheckResult::Pass(
+            "Found a `.copilotignore` file for a private repository.".to_owned(),
+        )],
+        FileCheckResult::AccessDenied => vec![CheckResult::Failure(
+            "Could not find a .copilotignore file for a private repository: Access Denied"
+                .to_owned(),
+        )],
+        FileCheckResult::AccessForbidden => vec![CheckResult::Failure(
+            "Could not find a .copilotignore file for a private repository: Access forbidden."
+                .to_owned(),
+        )],
+        FileCheckResult::NotFound => vec![CheckResult::Failure(
+            "Could not find a .copilotignore file for a private repository.".to_owned(),
+        )],
+        FileCheckResult::Error(_) => vec![CheckResult::Failure(
             "Could not find a .copilotignore file for a private repository.".to_owned(),
         )],
     }

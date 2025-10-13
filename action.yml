@@ -16,6 +16,10 @@ inputs:
     description: Check if the repository reports to Yellr.
     required: false
     default: "true"
+  check_bundler_audit:
+    description: Check if the repository has bundler-audit.
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -61,3 +65,4 @@ runs:
         INPUT_ACCESS_TOKEN: ${{ inputs.access_token }}
         INPUT_CHECK_DEPENDABOT: ${{ inputs.check_dependabot }}
         INPUT_CHECK_YELLR: ${{ inputs.check_yellr }}
+        INPUT_CHECK_BUNDLER_AUDIT: ${{ inputs.check_bundler_audit }}
