@@ -1,4 +1,4 @@
-use std::{error::Error, fs::OpenOptions, io::Write, process::exit};
+use std::{error::Error, fs::OpenOptions, io::Write, process::exit, sync::Arc};
 
 mod github_utils;
 
@@ -17,7 +17,7 @@ use dependabot::*;
 use github_actions::issue_command;
 use quality::*;
 
-use tokio::{runtime::Builder, task::JoinSet};
+use tokio::{runtime::Builder, sync::Semaphore, task::JoinSet};
 
 use crate::{
     copilot::verify_copilot_yaml, rails_projects::verify_rails_projects, results::CheckResult,
@@ -37,17 +37,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let rt = Builder::new_multi_thread().enable_all().build().unwrap();
 
+    let requests = Arc::new(Semaphore::new(1));
+
     let results = rt.block_on(async {
         let mut set = JoinSet::new();
 
         if input_result.check_dependabot {
-            set.spawn(verify_dependabot(input_result.clone()));
+            set.spawn(verify_dependabot(requests.clone(), input_result.clone()));
         }
         if input_result.check_yellr {
-            set.spawn(verify_updates_yellr(input_result.clone()));
+            set.spawn(verify_updates_yellr(requests.clone(), input_result.clone()));
         }
-        set.spawn(verify_copilot_yaml(input_result.clone()));
-        set.spawn(verify_rails_projects(input_result.clone()));
+        set.spawn(verify_copilot_yaml(requests.clone(), input_result.clone()));
+        set.spawn(verify_rails_projects(
+            requests.clone(),
+            input_result.clone(),
+        ));
 
         set.join_all()
             .await

@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use http::request::Builder;
+use tokio::sync::Semaphore;
 
 use crate::{
     github_utils::{file_check, octocrab_with_token_for, FileCheckResult},
@@ -6,15 +9,19 @@ use crate::{
     results::CheckResult,
 };
 
-pub(crate) async fn verify_dependabot(inputs: Inputs) -> Vec<CheckResult> {
+pub(crate) async fn verify_dependabot(
+    requests: Arc<Semaphore>,
+    inputs: Inputs,
+) -> Vec<CheckResult> {
     vec![
-        verify_dependabot_enabled(inputs.clone()).await,
-        verify_dependabot_yaml(inputs.clone()).await,
+        verify_dependabot_enabled(requests.clone(), inputs.clone()).await,
+        verify_dependabot_yaml(requests, inputs.clone()).await,
     ]
 }
 
-async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
+async fn verify_dependabot_yaml(requests: Arc<Semaphore>, inputs: Inputs) -> CheckResult {
     let oc = octocrab_with_token_for(&inputs);
+    let _ = requests.acquire().await;
     match file_check(&oc, &inputs, ".github/dependabot.yml").await {
         FileCheckResult::Found => CheckResult::Pass("Found a `.github/dependabot.yml`".to_owned()),
         FileCheckResult::AccessDenied => CheckResult::Failure(
@@ -32,12 +39,13 @@ async fn verify_dependabot_yaml(inputs: Inputs) -> CheckResult {
     }
 }
 
-async fn verify_dependabot_enabled(inputs: Inputs) -> CheckResult {
+async fn verify_dependabot_enabled(requests: Arc<Semaphore>, inputs: Inputs) -> CheckResult {
     let oc = octocrab_with_token_for(&inputs);
     let builder = Builder::new()
         .uri("/repos/".to_owned() + &inputs.repository + "/vulnerability-alerts")
         .method(http::Method::GET);
     let req = oc.build_request(builder, None::<&()>).unwrap();
+    let _ = requests.acquire().await;
     let dependabot_check = oc.execute(req).await;
     match dependabot_check {
         Err(_) => CheckResult::Failure(

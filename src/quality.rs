@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use octocrab::{models::hooks::Hook, OctocrabBuilder};
+use tokio::sync::Semaphore;
 
 use crate::{inputs::Inputs, results::CheckResult};
 
@@ -46,9 +49,13 @@ fn hook_check(h: &Hook) -> bool {
     correct_content_type && correct_url && h.active && does_correct_events
 }
 
-pub(crate) async fn verify_updates_yellr(inputs: Inputs) -> Vec<CheckResult> {
+pub(crate) async fn verify_updates_yellr(
+    results: Arc<Semaphore>,
+    inputs: Inputs,
+) -> Vec<CheckResult> {
     let ob = OctocrabBuilder::new().personal_token(inputs.access_token);
     let oc = ob.build().unwrap();
+    let _ = results.acquire().await;
     let dependabot_check: octocrab::Result<octocrab::Page<Hook>> = oc
         .get(
             "/repos/".to_owned() + &inputs.repository + "/hooks",
