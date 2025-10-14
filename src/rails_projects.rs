@@ -1,18 +1,19 @@
 use std::sync::Arc;
 
-use octocrab::Octocrab;
+use octocrab::{models::Rate, Octocrab};
 use tokio::sync::Semaphore;
 
 use crate::{
     github_utils::{
         file_check, grab_file, octocrab_with_token_for, FileCheckResult, GrabFileResult,
+        RateThrottle,
     },
     inputs::Inputs,
     results::CheckResult,
 };
 
 pub(crate) async fn verify_rails_projects(
-    requests: Arc<Semaphore>,
+    requests: RateThrottle,
     inputs: Inputs,
 ) -> Vec<CheckResult> {
     let oc = octocrab_with_token_for(&inputs);
@@ -24,13 +25,13 @@ pub(crate) async fn verify_rails_projects(
 }
 
 async fn verify_bundler_audit(
-    results: Arc<Semaphore>,
+    mut results: RateThrottle,
     oc: &Octocrab,
     inputs: &Inputs,
 ) -> CheckResult {
     let sem = results.acquire().await;
     let gl_file = grab_file(&oc, &inputs, "Gemfile.lock").await;
-    drop(sem.unwrap());
+    drop(sem);
     let gem_file = grab_file(&oc, &inputs, "Gemfile").await;
     let _ = results.acquire().await;
     match (gem_file, gl_file) {
@@ -50,7 +51,7 @@ async fn verify_bundler_audit(
 }
 
 async fn check_for_bundler_audit_yaml(
-    results: Arc<Semaphore>,
+    mut results: RateThrottle,
     oc: &Octocrab,
     inputs: &Inputs,
 ) -> CheckResult {

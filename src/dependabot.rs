@@ -1,7 +1,10 @@
 use http::request::Builder;
 
 use crate::{
-    github_utils::{file_check, octocrab_with_token_for, FileCheckResult, RateThrottle},
+    github_utils::{
+        file_check, octocrab_with_access_token_for, octocrab_with_token_for, FileCheckResult,
+        RateThrottle,
+    },
     inputs::Inputs,
     results::CheckResult,
 };
@@ -9,7 +12,7 @@ use crate::{
 pub(crate) async fn verify_dependabot(requests: RateThrottle, inputs: Inputs) -> Vec<CheckResult> {
     vec![
         verify_dependabot_enabled(requests.clone(), inputs.clone()).await,
-        //verify_dependabot_yaml(requests, inputs.clone()).await,
+        verify_dependabot_yaml(requests, inputs.clone()).await,
     ]
 }
 
@@ -34,7 +37,7 @@ async fn verify_dependabot_yaml(mut requests: RateThrottle, inputs: Inputs) -> C
 }
 
 async fn verify_dependabot_enabled(mut requests: RateThrottle, inputs: Inputs) -> CheckResult {
-    let oc = octocrab_with_token_for(&inputs);
+    let oc = octocrab_with_access_token_for(&inputs);
     let builder = Builder::new()
         .uri("/repos/".to_owned() + &inputs.repository + "/vulnerability-alerts")
         .method(http::Method::GET);

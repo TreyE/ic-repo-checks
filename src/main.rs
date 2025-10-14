@@ -17,7 +17,7 @@ use dependabot::*;
 use github_actions::issue_command;
 use quality::*;
 
-use tokio::{runtime::Builder, sync::Semaphore, task::JoinSet};
+use tokio::{runtime::Builder, task::JoinSet};
 
 use crate::{
     copilot::verify_copilot_yaml, github_utils::RateThrottle,
@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         /*set.spawn(verify_rails_projects(
             requests.clone(),
             input_result.clone(),
-        ))*/
+        ));*/
 
         set.join_all()
             .await
