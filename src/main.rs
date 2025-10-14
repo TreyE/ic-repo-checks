@@ -49,10 +49,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             set.spawn(verify_updates_yellr(requests.clone(), input_result.clone()));
         }
         set.spawn(verify_copilot_yaml(requests.clone(), input_result.clone()));
-        set.spawn(verify_rails_projects(
+        /*set.spawn(verify_rails_projects(
             requests.clone(),
             input_result.clone(),
-        ));
+        ));*/
 
         set.join_all()
             .await
