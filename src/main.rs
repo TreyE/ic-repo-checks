@@ -20,7 +20,8 @@ use quality::*;
 use tokio::{runtime::Builder, sync::Semaphore, task::JoinSet};
 
 use crate::{
-    copilot::verify_copilot_yaml, rails_projects::verify_rails_projects, results::CheckResult,
+    copilot::verify_copilot_yaml, github_utils::RateThrottle,
+    rails_projects::verify_rails_projects, results::CheckResult,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -37,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let rt = Builder::new_multi_thread().enable_all().build().unwrap();
 
-    let requests = Arc::new(Semaphore::new(1));
+    let requests = RateThrottle::new();
 
     let results = rt.block_on(async {
         let mut set = JoinSet::new();

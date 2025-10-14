@@ -1,7 +1,15 @@
+use std::{sync::Arc, time::Duration};
+
 use http_body_util::BodyExt;
 use octocrab::{repos::RepoHandler, Error, Octocrab, OctocrabBuilder};
+use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::inputs::Inputs;
+
+#[derive(Clone)]
+pub(crate) struct RateThrottle {
+    inner: Arc<Semaphore>,
+}
 
 pub(crate) enum FileCheckResult {
     Found,
@@ -17,6 +25,21 @@ pub(crate) enum GrabFileResult {
     AccessForbidden,
     NotFound,
     Error(Error),
+}
+
+impl RateThrottle {
+    pub(crate) fn new() -> Self {
+        let sem = Semaphore::new(1);
+        RateThrottle {
+            inner: Arc::new(sem),
+        }
+    }
+
+    pub(crate) async fn acquire(&mut self) -> SemaphorePermit {
+        let borrow = self.inner.acquire().await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        borrow.unwrap()
+    }
 }
 
 pub(crate) fn octocrab_with_token_for(inputs: &Inputs) -> Octocrab {

@@ -1,25 +1,19 @@
-use std::sync::Arc;
-
 use http::request::Builder;
-use tokio::sync::Semaphore;
 
 use crate::{
-    github_utils::{file_check, octocrab_with_token_for, FileCheckResult},
+    github_utils::{file_check, octocrab_with_token_for, FileCheckResult, RateThrottle},
     inputs::Inputs,
     results::CheckResult,
 };
 
-pub(crate) async fn verify_dependabot(
-    requests: Arc<Semaphore>,
-    inputs: Inputs,
-) -> Vec<CheckResult> {
+pub(crate) async fn verify_dependabot(requests: RateThrottle, inputs: Inputs) -> Vec<CheckResult> {
     vec![
         verify_dependabot_enabled(requests.clone(), inputs.clone()).await,
         verify_dependabot_yaml(requests, inputs.clone()).await,
     ]
 }
 
-async fn verify_dependabot_yaml(requests: Arc<Semaphore>, inputs: Inputs) -> CheckResult {
+async fn verify_dependabot_yaml(mut requests: RateThrottle, inputs: Inputs) -> CheckResult {
     let oc = octocrab_with_token_for(&inputs);
     let _ = requests.acquire().await;
     match file_check(&oc, &inputs, ".github/dependabot.yml").await {
@@ -39,7 +33,7 @@ async fn verify_dependabot_yaml(requests: Arc<Semaphore>, inputs: Inputs) -> Che
     }
 }
 
-async fn verify_dependabot_enabled(requests: Arc<Semaphore>, inputs: Inputs) -> CheckResult {
+async fn verify_dependabot_enabled(mut requests: RateThrottle, inputs: Inputs) -> CheckResult {
     let oc = octocrab_with_token_for(&inputs);
     let builder = Builder::new()
         .uri("/repos/".to_owned() + &inputs.repository + "/vulnerability-alerts")

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use octocrab::{models::hooks::Hook, OctocrabBuilder};
 use tokio::sync::Semaphore;
 
-use crate::{inputs::Inputs, results::CheckResult};
+use crate::{github_utils::RateThrottle, inputs::Inputs, results::CheckResult};
 
 static YELLR_WEBHOOK_1: &str =
     "https://us-central1-active-branches-report.cloudfunctions.net/webhook";
@@ -50,7 +50,7 @@ fn hook_check(h: &Hook) -> bool {
 }
 
 pub(crate) async fn verify_updates_yellr(
-    results: Arc<Semaphore>,
+    mut results: RateThrottle,
     inputs: Inputs,
 ) -> Vec<CheckResult> {
     let ob = OctocrabBuilder::new().personal_token(inputs.access_token);

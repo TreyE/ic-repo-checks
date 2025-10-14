@@ -1,17 +1,14 @@
-use std::sync::Arc;
-
-use tokio::sync::Semaphore;
-
 use crate::{
     github_utils::{
         file_check, octocrab_repo_handler_for, octocrab_with_token_for, FileCheckResult,
+        RateThrottle,
     },
     inputs::Inputs,
     results::CheckResult,
 };
 
 pub(crate) async fn verify_copilot_yaml(
-    results: Arc<Semaphore>,
+    mut results: RateThrottle,
     inputs: Inputs,
 ) -> Vec<CheckResult> {
     let oc = octocrab_with_token_for(&inputs);
@@ -21,7 +18,7 @@ pub(crate) async fn verify_copilot_yaml(
     if !repo.private.unwrap_or(false) {
         return vec![CheckResult::Ignore];
     }
-    drop(sem.unwrap());
+    drop(sem);
     let _ = results.acquire().await;
     match file_check(&oc, &inputs, ".copilotignore").await {
         FileCheckResult::Found => vec![CheckResult::Pass(
