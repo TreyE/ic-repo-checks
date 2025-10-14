@@ -9,7 +9,7 @@ use crate::{
 pub(crate) async fn verify_dependabot(requests: RateThrottle, inputs: Inputs) -> Vec<CheckResult> {
     vec![
         verify_dependabot_enabled(requests.clone(), inputs.clone()).await,
-        verify_dependabot_yaml(requests, inputs.clone()).await,
+        //verify_dependabot_yaml(requests, inputs.clone()).await,
     ]
 }
 
