@@ -43,7 +43,7 @@ impl RateThrottle {
 }
 
 pub(crate) fn octocrab_with_token_for(inputs: &Inputs) -> Octocrab {
-    let ob = OctocrabBuilder::new().personal_token(inputs.token.as_ref());
+    let ob = OctocrabBuilder::new().personal_token(inputs.token.clone());
     ob.build().unwrap()
 }
 
