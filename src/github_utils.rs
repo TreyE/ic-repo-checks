@@ -27,9 +27,11 @@ pub(crate) enum GrabFileResult {
     Error(Error),
 }
 
+static MAX_ACTIVE_REQUESTS: usize = 2;
+
 impl RateThrottle {
     pub(crate) fn new() -> Self {
-        let sem = Semaphore::new(1);
+        let sem = Semaphore::new(MAX_ACTIVE_REQUESTS);
         RateThrottle {
             inner: Arc::new(sem),
         }
@@ -37,7 +39,7 @@ impl RateThrottle {
 
     pub(crate) async fn acquire(&mut self) -> SemaphorePermit {
         let borrow = self.inner.acquire().await;
-        tokio::time::sleep(Duration::from_millis(500)).await;
+        tokio::time::sleep(Duration::from_millis(100)).await;
         borrow.unwrap()
     }
 }
