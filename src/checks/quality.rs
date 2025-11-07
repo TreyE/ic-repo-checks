@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use octocrab::{models::hooks::Hook, OctocrabBuilder};
-use tokio::sync::Semaphore;
 
 use crate::{github_utils::RateThrottle, inputs::Inputs, results::CheckResult};
 

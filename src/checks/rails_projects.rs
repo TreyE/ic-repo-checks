@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
-use octocrab::{models::Rate, Octocrab};
-use tokio::sync::Semaphore;
+use octocrab::Octocrab;
 
 use crate::{
     github_utils::{

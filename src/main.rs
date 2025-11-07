@@ -1,27 +1,21 @@
-use std::{error::Error, fs::OpenOptions, io::Write, process::exit, sync::Arc};
+use std::{error::Error, fs::OpenOptions, io::Write, process::exit};
 
 mod github_utils;
 
-mod copilot;
+mod checks;
 
 mod inputs;
 
 mod results;
 
-mod quality;
-
-mod rails_projects;
-
-mod dependabot;
-use dependabot::*;
 use github_actions::issue_command;
-use quality::*;
 
 use tokio::{runtime::Builder, task::JoinSet};
 
 use crate::{
-    copilot::verify_copilot_yaml, github_utils::RateThrottle,
-    rails_projects::verify_rails_projects, results::CheckResult,
+    checks::copilot::verify_copilot_yaml, checks::dependabot::*, checks::quality::*,
+    checks::rails_projects::verify_rails_projects, github_utils::RateThrottle,
+    results::CheckResult,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
