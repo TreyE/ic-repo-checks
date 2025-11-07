@@ -20,6 +20,10 @@ inputs:
     description: Check if the repository has bundler-audit.
     required: false
     default: "true"
+  check_default_branch_protected:
+    description: Check if the default repository branch is protected.
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -66,3 +70,4 @@ runs:
         INPUT_CHECK_DEPENDABOT: ${{ inputs.check_dependabot }}
         INPUT_CHECK_YELLR: ${{ inputs.check_yellr }}
         INPUT_CHECK_BUNDLER_AUDIT: ${{ inputs.check_bundler_audit }}
+        INPUT_CHECK_DEFAULT_BRANCH_PROTECTED: ${{ inputs.check_default_branch_protected }}

@@ -11,6 +11,7 @@ pub(crate) struct RateThrottle {
     inner: Arc<Semaphore>,
 }
 
+#[allow(dead_code)]
 pub(crate) enum FileCheckResult {
     Found,
     AccessDenied,
@@ -19,6 +20,7 @@ pub(crate) enum FileCheckResult {
     Error(Error),
 }
 
+#[allow(dead_code)]
 pub(crate) enum GrabFileResult {
     File(bytes::Bytes),
     AccessDenied,

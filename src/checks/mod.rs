@@ -1,3 +1,5 @@
+pub(crate) mod branch_protection;
+
 pub(crate) mod copilot;
 
 pub(crate) mod dependabot;

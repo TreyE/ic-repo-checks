@@ -13,8 +13,11 @@ use github_actions::issue_command;
 use tokio::{runtime::Builder, task::JoinSet};
 
 use crate::{
-    checks::copilot::verify_copilot_yaml, checks::dependabot::*, checks::quality::*,
-    checks::rails_projects::verify_rails_projects, github_utils::RateThrottle,
+    checks::{
+        branch_protection::verify_default_branch_protected, copilot::verify_copilot_yaml,
+        dependabot::*, quality::*, rails_projects::verify_rails_projects,
+    },
+    github_utils::RateThrottle,
     results::CheckResult,
 };
 
@@ -48,6 +51,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             requests.clone(),
             input_result.clone(),
         ));
+        if input_result.check_default_branch_protected {
+            set.spawn(verify_default_branch_protected(
+                requests.clone(),
+                input_result.clone(),
+            ));
+        }
 
         set.join_all()
             .await
